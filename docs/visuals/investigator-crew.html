@@ -1,0 +1,367 @@
+<title>Investigator Crew</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow reading column; the architecture figure is the hero, everything below annotates it. */
+:root {
+  --bg: #F4F6F9;
+  --surface: #FFFFFF;
+  --ink: #142030;
+  --muted: #5B6979;
+  --line: #CDD5DF;
+  --accent: #0A64C2;      /* SAP BTP managed services */
+  --accent-soft: #E7F0FB;
+  --flag: #A85A0B;        /* [PREDICT] cells */
+  --flag-soft: #FBF0E2;
+  --display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D131A; --surface: #141C26; --ink: #E3E9F0; --muted: #94A2B2; --line: #2B3746;
+    --accent: #5EA9F2; --accent-soft: #13263A; --flag: #EFA54E; --flag-soft: #2C2114;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D131A; --surface: #141C26; --ink: #E3E9F0; --muted: #94A2B2; --line: #2B3746;
+  --accent: #5EA9F2; --accent-soft: #13263A; --flag: #EFA54E; --flag-soft: #2C2114;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; padding-block: 48px 64px; display: grid; gap: 56px; }
+h1, h2 { font-family: var(--display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(34px, 6vw, 52px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
+h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+p { margin: 0; }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 14px; }
+.lede { font-size: 18px; max-width: 62ch; color: var(--ink); }
+.stack { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.chip { font-family: var(--mono); font-size: 12px; padding: 4px 9px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); background: var(--surface); }
+.chip.sap { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+section { display: grid; gap: 18px; }
+.sec-head { display: grid; gap: 4px; }
+.sec-head p { color: var(--muted); max-width: 70ch; }
+
+/* Figure */
+figure { margin: 0; display: grid; gap: 12px; }
+.diagram { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.diagram svg { display: block; width: 100%; min-width: 860px; height: auto; }
+figcaption { color: var(--muted); font-size: 14px; max-width: 80ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 16px; height: 11px; border-radius: 2px; border: 1.5px solid; display: inline-block; }
+.sw.svc { border-color: var(--accent); background: var(--accent-soft); }
+.sw.code { border-color: var(--ink); background: var(--surface); }
+.sw.zone { border-color: var(--muted); border-style: dashed; }
+
+/* SVG classes */
+.zone { fill: none; stroke: var(--line); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.zone-btp { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 2 4; }
+.svc { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.code { fill: var(--surface); stroke: var(--ink); stroke-width: 1.5; }
+.ext { fill: var(--bg); stroke: var(--muted); stroke-width: 1.2; }
+.t-name { fill: var(--ink); font-family: var(--body); font-size: 15px; font-weight: 600; }
+.t-svc { fill: var(--accent); font-family: var(--body); font-size: 15px; font-weight: 600; }
+.t-zone { fill: var(--muted); font-family: var(--body); font-size: 13px; font-weight: 600; }
+.t-meta { fill: var(--muted); font-family: var(--mono); font-size: 11px; }
+.t-key { fill: var(--muted); font-family: var(--body); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.t-edge { fill: var(--ink); font-family: var(--mono); font-size: 11px; paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+.t-edge-sub { fill: var(--muted); font-family: var(--mono); font-size: 10.5px; paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+.edge { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+.head { fill: var(--ink); }
+
+/* Steps */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; counter-reset: s; }
+.steps li { background: var(--surface); padding: 16px 18px; display: grid; gap: 6px; align-content: start; counter-increment: s; min-width: 0; }
+.steps li::before { content: counter(s); font-family: var(--mono); font-size: 12px; color: var(--accent); }
+.steps b { font-weight: 600; }
+.steps p { color: var(--muted); font-size: 14px; }
+
+/* Data */
+.two { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; }
+@media (max-width: 820px) { .two { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.panel h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.panel .note { color: var(--muted); font-size: 13.5px; }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-weight: 500; color: var(--muted); font-size: 11px; letter-spacing: 0.04em; }
+td.num { text-align: right; }
+th.num { text-align: right; }
+.predict { color: var(--flag); background: var(--flag-soft); padding: 1px 5px; border-radius: 3px; }
+.files { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.files li { font-family: var(--mono); font-size: 12px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); overflow-wrap: anywhere; }
+
+/* Codebase */
+.tree { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.row { display: grid; grid-template-columns: minmax(0, 280px) minmax(0, 1fr) auto; gap: 16px; padding: 11px 18px; border-bottom: 1px solid var(--line); align-items: baseline; }
+.row:last-child { border-bottom: 0; }
+.row .path { font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+.row .path .dim { color: var(--muted); }
+.row .what { color: var(--muted); font-size: 14px; }
+.tag { font-family: var(--mono); font-size: 11px; padding: 2px 7px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.run { border-color: var(--ink); color: var(--ink); }
+.tag.deploy { border-color: var(--accent); color: var(--accent); }
+.tag.joule { border-color: var(--accent); color: var(--surface); background: var(--accent); }
+@media (max-width: 640px) {
+  .row { grid-template-columns: 1fr auto; }
+  .row .what { grid-column: 1 / -1; }
+}
+
+/* Exercise path */
+.path-strip { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.path-strip li { display: grid; gap: 2px; padding: 10px 12px; border-top: 2px solid var(--line); min-width: 0; }
+.path-strip li.sap { border-top-color: var(--accent); }
+.path-strip .n { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.path-strip .t { font-size: 13.5px; font-weight: 500; }
+
+footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 18px; }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">SAP CodeJam · Berlin · 15 September 2026</div>
+  <h1>Investigator Crew</h1>
+  <p class="lede">A three-agent CrewAI system that investigates an art theft. Built in one day on SAP Business Technology Platform, deployed to Cloud Foundry, and called from SAP Joule.</p>
+  <div class="stack">
+    <span class="chip sap">SAP Joule</span>
+    <span class="chip sap">Generative AI Hub</span>
+    <span class="chip sap">SAP-RPT-1</span>
+    <span class="chip sap">Grounding Service</span>
+    <span class="chip sap">SAP AI Launchpad</span>
+    <span class="chip sap">Cloud Foundry</span>
+    <span class="chip sap">Business Application Studio</span>
+    <span class="chip">Python</span>
+    <span class="chip">CrewAI</span>
+    <span class="chip">LiteLLM</span>
+    <span class="chip">A2A protocol</span>
+  </div>
+</header>
+
+<figure>
+  <div class="diagram">
+    <svg viewBox="0 0 1120 650" role="img" aria-label="Architecture: a user asks SAP Joule, which sends an A2A request to a CrewAI crew running on Cloud Foundry. The crew's three agents run in sequence. The Appraiser calls SAP-RPT-1, the Evidence Analyst queries the Grounding Service over evidence files in SAP Object Store, and every agent reasons through Generative AI Hub. The Lead Detective's report returns to Joule.">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" class="head"/>
+        </marker>
+      </defs>
+
+      <!-- User -->
+      <rect x="24" y="22" width="190" height="54" rx="6" class="ext"/>
+      <text x="119" y="45" text-anchor="middle" class="t-name">Business user</text>
+      <text x="119" y="63" text-anchor="middle" class="t-meta">chats in Joule</text>
+
+      <!-- BTP frame -->
+      <rect x="12" y="98" width="1096" height="540" rx="10" class="zone-btp"/>
+      <text x="28" y="122" class="t-key">SAP BTP subaccount</text>
+
+      <!-- user -> joule -->
+      <line x1="119" y1="76" x2="119" y2="168" class="edge" marker-end="url(#arr)"/>
+      <text x="129" y="146" class="t-edge">"investigate"</text>
+
+      <!-- Joule -->
+      <rect x="24" y="170" width="190" height="400" rx="6" class="svc"/>
+      <text x="40" y="198" class="t-svc">SAP Joule</text>
+      <text x="40" y="228" class="t-key">capability</text>
+      <text x="40" y="245" class="t-meta">investigator_capability</text>
+      <text x="40" y="275" class="t-key">function</text>
+      <text x="40" y="292" class="t-meta">investigate_function</text>
+      <text x="40" y="322" class="t-key">action</text>
+      <text x="40" y="339" class="t-meta">agent-request · remote</text>
+      <text x="40" y="369" class="t-key">system alias</text>
+      <text x="40" y="386" class="t-meta">INVESTIGATOR_AGENT</text>
+      <text x="40" y="416" class="t-key">renders</text>
+      <text x="40" y="433" class="t-meta">artifacts[0] as markdown</text>
+
+      <!-- Cloud Foundry app -->
+      <rect x="290" y="140" width="412" height="478" rx="8" class="zone"/>
+      <text x="306" y="164" class="t-zone">Cloud Foundry app</text>
+      <text x="306" y="182" class="t-meta">investigator-crew-kawe · FastAPI · A2A server</text>
+
+      <!-- Crew -->
+      <rect x="316" y="200" width="360" height="400" rx="6" class="zone"/>
+      <text x="332" y="224" class="t-zone">CrewAI crew</text>
+      <text x="420" y="224" class="t-meta">Process.sequential</text>
+
+      <rect x="356" y="270" width="280" height="70" rx="6" class="code"/>
+      <text x="374" y="298" class="t-name">Loss Appraiser</text>
+      <text x="374" y="320" class="t-meta">gemini-2.5-flash-lite · call_rpt1</text>
+
+      <rect x="356" y="390" width="280" height="70" rx="6" class="code"/>
+      <text x="374" y="418" class="t-name">Evidence Analyst</text>
+      <text x="374" y="440" class="t-meta">gemini-2.5-flash-lite · grounding</text>
+
+      <rect x="356" y="510" width="280" height="70" rx="6" class="code"/>
+      <text x="374" y="538" class="t-name">Lead Detective</text>
+      <text x="374" y="560" class="t-meta">gpt-4o · no tools, reads both reports</text>
+
+      <!-- sequential hand-offs -->
+      <line x1="496" y1="340" x2="496" y2="388" class="edge" marker-end="url(#arr)"/>
+      <text x="506" y="369" class="t-edge-sub">appraisal</text>
+      <line x1="496" y1="460" x2="496" y2="508" class="edge" marker-end="url(#arr)"/>
+      <text x="506" y="489" class="t-edge-sub">+ evidence report</text>
+
+      <!-- Joule <-> crew -->
+      <line x1="214" y1="305" x2="354" y2="305" class="edge" marker-end="url(#arr)"/>
+      <text x="284" y="296" text-anchor="middle" class="t-edge">A2A request</text>
+      <text x="284" y="321" text-anchor="middle" class="t-edge-sub">JSON-RPC</text>
+      <line x1="356" y1="545" x2="216" y2="545" class="edge" marker-end="url(#arr)"/>
+      <text x="284" y="536" text-anchor="middle" class="t-edge">report</text>
+      <text x="284" y="561" text-anchor="middle" class="t-edge-sub">A2A artifact</text>
+
+      <!-- SAP AI Core -->
+      <rect x="760" y="140" width="336" height="340" rx="8" class="zone"/>
+      <text x="776" y="164" class="t-zone">SAP AI Core</text>
+      <text x="776" y="182" class="t-meta">resource group ai-agents-codejam</text>
+
+      <rect x="786" y="196" width="284" height="56" rx="6" class="svc"/>
+      <text x="802" y="220" class="t-svc">Generative AI Hub</text>
+      <text x="802" y="240" class="t-meta">gemini-2.5-flash-lite · gpt-4o</text>
+
+      <rect x="786" y="270" width="284" height="70" rx="6" class="svc"/>
+      <text x="802" y="298" class="t-svc">SAP-RPT-1</text>
+      <text x="802" y="320" class="t-meta">sap-rpt-1-large · tabular model</text>
+
+      <rect x="786" y="390" width="284" height="70" rx="6" class="svc"/>
+      <text x="802" y="418" class="t-svc">Grounding Service</text>
+      <text x="802" y="440" class="t-meta">vector pipeline · top 5 chunks</text>
+
+      <!-- crew -> gen ai hub -->
+      <line x1="676" y1="224" x2="784" y2="224" class="edge" marker-end="url(#arr)"/>
+      <text x="730" y="215" text-anchor="middle" class="t-edge">LLM calls</text>
+      <text x="730" y="240" text-anchor="middle" class="t-edge-sub">via LiteLLM</text>
+
+      <!-- tools -->
+      <line x1="638" y1="305" x2="784" y2="305" class="edge" marker-start="url(#arr)" marker-end="url(#arr)"/>
+      <text x="711" y="296" text-anchor="middle" class="t-edge">call_rpt1(payload)</text>
+      <text x="711" y="321" text-anchor="middle" class="t-edge-sub">fills [PREDICT]</text>
+      <line x1="638" y1="425" x2="784" y2="425" class="edge" marker-start="url(#arr)" marker-end="url(#arr)"/>
+      <text x="711" y="416" text-anchor="middle" class="t-edge">grounding query</text>
+      <text x="711" y="441" text-anchor="middle" class="t-edge-sub">per suspect</text>
+
+      <!-- Object store -->
+      <rect x="786" y="530" width="284" height="70" rx="6" class="svc"/>
+      <text x="802" y="558" class="t-svc">SAP Object Store</text>
+      <text x="802" y="580" class="t-meta">evidence-documents · 8 files</text>
+      <line x1="928" y1="530" x2="928" y2="462" class="edge" marker-end="url(#arr)"/>
+      <text x="938" y="501" class="t-edge-sub">chunked + embedded</text>
+    </svg>
+  </div>
+  <figcaption>The code I wrote is the A2A server and the three agents. Everything else is a managed SAP service. Joule never sees the crew's internals: it sends one A2A request and renders the report that comes back.</figcaption>
+  <div class="legend">
+    <span><i class="sw svc"></i>SAP BTP service</span>
+    <span><i class="sw code"></i>Agent I built (CrewAI)</span>
+    <span><i class="sw zone"></i>Runtime boundary</span>
+  </div>
+</figure>
+
+<section>
+  <div class="sec-head">
+    <h2>One request, end to end</h2>
+    <p>What happens between asking Joule and getting a verdict. The crew run takes two to five minutes.</p>
+  </div>
+  <ol class="steps">
+    <li><b>Joule routes the request</b><p>The <code>investigate_function</code> sends an <code>agent-request</code> to the remote agent behind <code>INVESTIGATOR_AGENT</code>.</p></li>
+    <li><b>The A2A server accepts it</b><p><code>server.py</code> reports <code>working</code>, reads the suspect names, and starts the crew in a worker thread.</p></li>
+    <li><b>The Appraiser values the loss</b><p>It sends the stolen-items table to SAP-RPT-1, which predicts the missing insurance values and category.</p></li>
+    <li><b>The Analyst reads the evidence</b><p>It queries the Grounding Service once per suspect and reports only what the documents say.</p></li>
+    <li><b>The Detective decides</b><p>It compares alibis, motives, opportunity and money across both reports, names the thief, and totals the insurance value.</p></li>
+    <li><b>Joule shows the verdict</b><p>The report returns as the A2A artifact <code>investigation_result</code>, and the task is marked <code>completed</code>.</p></li>
+  </ol>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>What the agents work with</h2>
+    <p>Two kinds of data, each matched to the model that handles it best.</p>
+  </div>
+  <div class="two">
+    <div class="panel">
+      <h3>Stolen items table → SAP-RPT-1</h3>
+      <p class="note">14 items. Five cells are marked <span class="predict mono">[PREDICT]</span>. RPT-1 handles regression for the values and classification for the category. The LLM never guesses a number.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>ITEM_ID</th><th>ITEM_NAME</th><th>ARTIST</th><th class="num">INSURANCE_VALUE</th><th>CATEGORY</th></tr></thead>
+          <tbody>
+            <tr><td>ART_001</td><td>Water Lilies - Series 1</td><td>Monet</td><td class="num">45,000,000</td><td>Painting</td></tr>
+            <tr><td>ART_003</td><td>Irises</td><td>van Gogh</td><td class="num"><span class="predict">[PREDICT]</span></td><td>Painting</td></tr>
+            <tr><td>ART_007</td><td>Girl with a Pearl Earring</td><td>Vermeer</td><td class="num"><span class="predict">[PREDICT]</span></td><td>Painting</td></tr>
+            <tr><td>ART_009</td><td>The Persistence of Memory</td><td>Dalí</td><td class="num">35,000,000</td><td><span class="predict">[PREDICT]</span></td></tr>
+            <tr><td>ART_012</td><td>The Thinker</td><td>Rodin</td><td class="num"><span class="predict">[PREDICT]</span></td><td>Sculpture</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Case files → Grounding Service</h3>
+      <p class="note">Plain-text evidence, chunked and embedded into a vector pipeline set up in SAP AI Launchpad.</p>
+      <ul class="files">
+        <li>SECURITY_LOG.txt</li>
+        <li>PHONE_RECORDS.txt</li>
+        <li>BANK_RECORDS.txt</li>
+        <li>SOPHIE_LOAN_DOCUMENTS.txt</li>
+        <li>MARCUS_TERMINATION_LETTER.txt</li>
+        <li>MARCUS_EXIT_LOG.txt</li>
+        <li>VIKTOR_CRIMINAL_RECORD.txt</li>
+        <li>STOLEN_ITEMS_INVENTORY.txt</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>Codebase</h2>
+    <p><code>project/Python/starter-project/</code>, empty at 11:30 and deployed by the afternoon.</p>
+  </div>
+  <div class="tree">
+    <div class="row"><span class="path">main.py</span><span class="what">Local run. Starts the crew with the payload and the three suspect names.</span><span class="tag run">run</span></div>
+    <div class="row"><span class="path">investigator_crew.py</span><span class="what">The two tools (<code>call_rpt1</code>, <code>call_grounding_service</code>), the three agents and tasks, and the sequential crew.</span><span class="tag run">run</span></div>
+    <div class="row"><span class="path"><span class="dim">config/</span>agents.yaml</span><span class="what">Role, goal, backstory and model for each agent. Each goal ends with an instruction never to invent facts.</span><span class="tag run">run</span></div>
+    <div class="row"><span class="path"><span class="dim">config/</span>tasks.yaml</span><span class="what">Task briefs. <code>solve_crime</code> takes the appraisal and evidence report as context.</span><span class="tag run">run</span></div>
+    <div class="row"><span class="path">payload.py</span><span class="what">The stolen-items table with <code>[PREDICT]</code> placeholders for RPT-1.</span><span class="tag run">run</span></div>
+    <div class="row"><span class="path">server.py</span><span class="what">A2A server on FastAPI. Publishes the agent card "Investigate Art Theft" and a <code>/health</code> check.</span><span class="tag deploy">deploy</span></div>
+    <div class="row"><span class="path">manifest.yml</span><span class="what">Cloud Foundry app on uvicorn, bound to the <code>generative-ai-hub</code> service.</span><span class="tag deploy">deploy</span></div>
+    <div class="row"><span class="path">requirements.txt</span><span class="what"><code>crewai[a2a]</code>, <code>a2a-sdk</code>, <code>litellm</code>, <code>sap-ai-sdk-gen</code>.</span><span class="tag deploy">deploy</span></div>
+    <div class="row"><span class="path"><span class="dim">joule/</span>da.sapdas.yaml</span><span class="what">Joule digital assistant project that loads the capability.</span><span class="tag joule">joule</span></div>
+    <div class="row"><span class="path"><span class="dim">joule/</span>investigator_capability/</span><span class="what">Capability, scenario and function. The function forwards the request to the remote agent and renders the reply.</span><span class="tag joule">joule</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <h2>The day, exercise by exercise</h2>
+  </div>
+  <ol class="path-strip">
+    <li class="sap"><span class="n">00</span><span class="t">Generative AI Hub</span></li>
+    <li class="sap"><span class="n">01</span><span class="t">Dev space in BAS</span></li>
+    <li><span class="n">02</span><span class="t">First agent</span></li>
+    <li class="sap"><span class="n">03</span><span class="t">First tool: RPT-1</span></li>
+    <li><span class="n">04</span><span class="t">Multi-agent crew</span></li>
+    <li class="sap"><span class="n">05</span><span class="t">Grounding Service</span></li>
+    <li><span class="n">06</span><span class="t">Web search agent</span></li>
+    <li><span class="n">07</span><span class="t">Solve the crime</span></li>
+    <li class="sap"><span class="n">08</span><span class="t">Deploy with A2A</span></li>
+    <li class="sap"><span class="n">09</span><span class="t">Integrate into Joule</span></li>
+  </ol>
+</section>
+
+<footer>
+  <span>Workshop material: <a href="https://github.com/SAP-samples/codejam-code-based-agents">SAP-samples/codejam-code-based-agents</a></span>
+  <span>Who did it? Not on this page.</span>
+</footer>
+
+</div>

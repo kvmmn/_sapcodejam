@@ -1,0 +1,35 @@
+# tasks.yaml
+appraise_loss_task:
+  description: >
+    Analyze the theft crime scene and predict the missing values of stolen items using the RPT-1 model via the call_rpt1 tool.
+    Use the payload data provided in the inputs: {payload}
+  expected_output: >
+    JSON with predicted values for the stolen items.
+  agent: appraiser_agent
+
+analyze_evidence_task:
+  description: >
+    Analyze the evidence of the theft that you can access via the grounding tool.
+    Provide any insights that can help in the investigation especially regarding alibis. 
+    Check the evidence iteratively for all three suspect names and provide an analysis for each of them.
+  expected_output: >
+    A detailed analysis of the evidence for each suspect, including any insights that can help in the investigation.
+  agent: evidence_analyst_agent
+
+solve_crime:
+  description: >
+    Find the thief among the suspects by reviewing:
+    1. The insurance appraisal values from the appraiser agent
+    2. The internal evidence analysis from the evidence analyst agent
+
+    Synthesize both sources to identify the culprit with high confidence.
+    Compare alibis, motives, opportunity, and financial evidence. Cite the reports.
+
+    For the insurance total, sum EVERY stolen item in the appraisal inventory:
+    use the known INSURANCE_VALUE when it is a number, and the RPT-1 prediction
+    only for rows whose INSURANCE_VALUE was [PREDICT]. Do not treat a predicted
+    ITEM_CATEGORY as an insurance value.
+  expected_output: >
+    The name of the thief (and any accomplice supported by evidence) plus the
+    total insurance value of all stolen items.
+  agent: lead_detective_agent

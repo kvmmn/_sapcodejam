@@ -1,0 +1,346 @@
+<title>Investigator Crew Internals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: bright technical sheet. Layer stack, then the request sequence, then contracts and design decisions. Same palette as the Investigator Crew Map. */
+:root {
+  color-scheme: light;
+  --bg: #FFFFFF;
+  --panel: #FBFCFE;
+  --ink: #0F2138;
+  --muted: #5E6E82;
+  --line: #D9E1EB;
+  --blue: #1D4F91;   --blue-soft: #EAF0F8;
+  --amber: #1D4F91;  --amber-soft: #EAF0F8;
+  --teal: #1D4F91;   --teal-soft: #EAF0F8;
+  --violet: #1D4F91; --violet-soft: #EAF0F8;
+  --code-bg: #0F2138; --code-ink: #E3EAF3; --code-dim: #7C8FA8; --code-key: #9DB8DC; --code-str: #E3EAF3;
+  --sans: "Plus Jakarta Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; padding-block: 40px 56px; display: grid; gap: 52px; }
+code { font-family: var(--mono); font-size: 0.88em; }
+a { color: var(--blue); }
+a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+header { display: grid; gap: 8px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--blue); }
+h1 { margin: 0; font-size: clamp(32px, 5.4vw, 48px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; text-wrap: balance; }
+h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.015em; text-wrap: balance; }
+.lede { margin: 0; font-size: 18px; color: var(--muted); max-width: 64ch; }
+section { display: grid; gap: 18px; }
+.sh { display: grid; gap: 4px; }
+.sh p { margin: 0; color: var(--muted); max-width: 72ch; }
+.key { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 2px solid; }
+.sw.sap { background: var(--blue-soft); border-color: var(--blue); }
+.sw.mine { background: #FFFFFF; border-color: var(--ink); }
+
+/* Layer stack */
+.stack { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); }
+.layer { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--line); align-items: center; }
+.layer:last-child { border-bottom: 0; }
+.lname { display: grid; gap: 1px; }
+.lname b { font-size: 14.5px; font-weight: 700; }
+.lname span { font-family: var(--mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.items { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.c { font-family: var(--mono); font-size: 12.5px; padding: 5px 10px; border-radius: 8px; border: 1.5px solid var(--ink); background: #FFFFFF; white-space: nowrap; }
+.c.sap { border-color: var(--blue); background: var(--blue-soft); color: var(--blue); }
+.c.amber { border-color: var(--amber); background: var(--amber-soft); }
+.c.teal { border-color: var(--teal); background: var(--teal-soft); }
+.c.violet { border-color: var(--violet); background: var(--violet-soft); }
+.to { color: var(--muted); font-size: 13px; }
+.note { font-size: 12.5px; color: var(--muted); }
+.down { text-align: center; color: var(--muted); font-size: 12px; font-family: var(--mono); }
+@media (max-width: 680px) { .layer { grid-template-columns: 1fr; gap: 8px; } }
+
+/* Sequence */
+.diagram { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+.diagram svg { display: block; width: 100%; min-width: 980px; height: auto; }
+.band { stroke: none; }
+.band-a { fill: #F1F5FA; } .band-b { fill: #FFFFFF; }
+.bl { fill: var(--muted); font-family: var(--sans); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.hd-sap { fill: var(--blue-soft); stroke: var(--blue); stroke-width: 1.8; }
+.hd-mine { fill: #FFFFFF; stroke: var(--ink); stroke-width: 1.8; }
+.hd-amber { fill: var(--amber-soft); stroke: var(--amber); stroke-width: 1.8; }
+.hd-teal { fill: var(--teal-soft); stroke: var(--teal); stroke-width: 1.8; }
+.hd-violet { fill: var(--violet-soft); stroke: var(--violet); stroke-width: 1.8; }
+.ht { fill: var(--ink); font-family: var(--sans); font-size: 14px; font-weight: 700; }
+.hs { fill: var(--muted); font-family: var(--mono); font-size: 10.5px; }
+.life { stroke: #B7C4D4; stroke-width: 1.2; stroke-dasharray: 4 5; }
+.act { fill: #FFFFFF; stroke: var(--ink); stroke-width: 1.2; }
+.m { fill: none; stroke: var(--ink); stroke-width: 1.6; }
+.r { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.m-amber { fill: none; stroke: var(--amber); stroke-width: 1.8; } .r-amber { fill: none; stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.m-teal { fill: none; stroke: var(--teal); stroke-width: 1.8; } .r-teal { fill: none; stroke: var(--teal); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.m-violet { fill: none; stroke: var(--violet); stroke-width: 1.8; } .r-violet { fill: none; stroke: var(--violet); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.ah { fill: var(--ink); } .ah-amber { fill: var(--amber); } .ah-teal { fill: var(--teal); } .ah-violet { fill: var(--violet); }
+.ml { font-family: var(--mono); font-size: 12px; fill: var(--ink); paint-order: stroke; stroke-width: 6px; stroke-linejoin: round; }
+.on-a { stroke: #F1F5FA; } .on-b { stroke: #FFFFFF; }
+.ms { font-family: var(--mono); font-size: 10.5px; fill: var(--muted); paint-order: stroke; stroke-width: 6px; stroke-linejoin: round; }
+.nb { fill: var(--ink); } .nt { fill: #FFFFFF; font-family: var(--sans); font-size: 10.5px; font-weight: 800; }
+
+/* Contracts */
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .cards { grid-template-columns: 1fr; } }
+.card { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; min-width: 0; background: #FFFFFF; }
+.card-h { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dot.blue { background: var(--blue); } .dot.amber { background: var(--amber); } .dot.teal { background: var(--teal); } .dot.ink { background: var(--ink); } .dot.violet { background: var(--violet); }
+.card-h b { font-size: 14.5px; }
+.card-h code { color: var(--muted); font-size: 12px; margin-left: auto; }
+pre { margin: 0; padding: 16px; background: var(--code-bg); color: var(--code-ink); font-family: var(--mono); font-size: 12.5px; line-height: 1.6; overflow-x: auto; }
+pre .k { color: var(--code-key); } pre .s { color: var(--code-str); } pre .d { color: var(--code-dim); }
+
+/* Decisions */
+.decisions { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 960px) { .decisions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .decisions { grid-template-columns: 1fr; } }
+.decisions li { border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; background: #FFFFFF; min-width: 0; }
+.decisions b { font-size: 15.5px; font-weight: 700; }
+.decisions p { margin: 0; color: var(--muted); font-size: 14px; }
+.decisions .where { font-family: var(--mono); font-size: 11.5px; color: var(--blue); }
+
+footer { display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 16px; font-size: 13px; color: var(--muted); }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">SAP CodeJam Berlin · Technical design</div>
+  <h1>Investigator Crew Internals</h1>
+  <p class="lede">The layers, the request path and the contracts behind my CrewAI investigator on SAP BTP: from a Joule chat message to SAP AI Core and back.</p>
+</header>
+
+<!-- 1. Layers -->
+<section>
+  <div class="sh">
+    <h2>Seven layers, top to bottom</h2>
+    <p>Each layer only knows the one below it. Joule never sees CrewAI, and the crew never sees Joule.</p>
+  </div>
+  <div class="stack">
+    <div class="layer">
+      <div class="lname"><span>Experience</span><b>SAP Joule</b></div>
+      <div class="items"><span class="c sap">investigate_scenario</span><span class="to">→</span><span class="c sap">investigate_function</span><span class="to">→</span><span class="c sap">agent-request · remote</span><span class="to">→</span><span class="c sap">alias INVESTIGATOR_AGENT</span><span class="note">deployed with <code>joule deploy -c</code></span></div>
+    </div>
+    <div class="layer">
+      <div class="lname"><span>Connectivity</span><b>BTP Destination</b></div>
+      <div class="items"><span class="c sap">INVESTIGATOR_AGENT_025</span><span class="note">HTTP · Internet proxy · resolves the alias to the app URL</span></div>
+    </div>
+    <div class="layer">
+      <div class="lname"><span>Runtime</span><b>Cloud Foundry</b></div>
+      <div class="items"><span class="c sap">python buildpack</span><span class="c">uvicorn · 1 worker</span><span class="c">1024M RAM</span><span class="c">health check /health</span><span class="note">app <code>investigator-crew-kawe</code></span></div>
+    </div>
+    <div class="layer">
+      <div class="lname"><span>Protocol</span><b>A2A server</b></div>
+      <div class="items"><span class="c">GET /.well-known/agent-card.json</span><span class="c">POST / · message/send</span><span class="c">InvestigatorExecutor</span><span class="c">InMemoryTaskStore</span></div>
+    </div>
+    <div class="layer">
+      <div class="lname"><span>Orchestration</span><b>CrewAI</b></div>
+      <div class="items"><span class="c">Loss Appraiser</span><span class="to">→</span><span class="c">Evidence Analyst</span><span class="to">→</span><span class="c">Lead Detective</span><span class="note">Process.sequential · agents.yaml + tasks.yaml</span></div>
+    </div>
+    <div class="layer">
+      <div class="lname"><span>Model access</span><b>SDKs</b></div>
+      <div class="items"><span class="c">LiteLLM · sap/ provider</span><span class="c">RPTClient</span><span class="c">RetrievalAPIClient</span><span class="note">SAP Cloud SDK for AI · credentials from the <code>generative-ai-hub</code> binding</span></div>
+    </div>
+    <div class="layer">
+      <div class="lname"><span>AI services</span><b>SAP AI Core</b></div>
+      <div class="items"><span class="c sap">Generative AI Hub</span><span class="c sap">SAP-RPT-1 · sap-rpt-1-large</span><span class="c sap">Grounding · SAP Vector Engine</span><span class="c sap">Object Store · evidence-documents</span><span class="note">resource group <code>ai-agents-codejam</code></span></div>
+    </div>
+  </div>
+  <div class="key">
+    <span><i class="sw sap"></i>SAP BTP service or config</span>
+    <span><i class="sw mine"></i>My code (Python)</span>
+  </div>
+</section>
+
+<!-- 2. Sequence -->
+<section>
+  <div class="sh">
+    <h2>One request, message by message</h2>
+    <p>Joule discovers the agent through its card, sends a single JSON-RPC call, and waits. Inside, the crew calls three different AI services in a fixed order. Dashed arrows are responses.</p>
+  </div>
+  <div class="diagram">
+    <svg viewBox="0 0 1200 720" role="img" aria-label="Sequence: Joule resolves the destination, fetches the agent card, and sends message/send to the A2A server. The server starts the crew in a thread. The appraiser calls SAP-RPT-1, the analyst calls the Grounding Service once per suspect, and the agents reason through Generative AI Hub. The crew output returns to the server, which sends a completed task with the investigation_result artifact back to Joule for rendering.">
+      <defs>
+        <marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+        <marker id="h-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah-amber"/></marker>
+        <marker id="h-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah-teal"/></marker>
+        <marker id="h-v" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ah-violet"/></marker>
+      </defs>
+
+      <!-- phase bands -->
+      <rect x="0" y="92" width="1200" height="116" class="band band-a"/>
+      <rect x="0" y="208" width="1200" height="98" class="band band-b"/>
+      <rect x="0" y="306" width="1200" height="270" class="band band-a"/>
+      <rect x="0" y="576" width="1200" height="144" class="band band-b"/>
+      <text x="16" y="112" class="bl">Discover</text>
+      <text x="16" y="228" class="bl">Invoke</text>
+      <text x="16" y="326" class="bl">Investigate</text>
+      <text x="16" y="596" class="bl">Respond</text>
+
+      <!-- headers -->
+      <rect x="95" y="18" width="130" height="56" rx="10" class="hd-sap"/>
+      <text x="160" y="42" text-anchor="middle" class="ht">SAP Joule</text><text x="160" y="60" text-anchor="middle" class="hs">capability</text>
+      <rect x="245" y="18" width="130" height="56" rx="10" class="hd-sap"/>
+      <text x="310" y="42" text-anchor="middle" class="ht">Destination</text><text x="310" y="60" text-anchor="middle" class="hs">BTP connectivity</text>
+      <rect x="395" y="18" width="130" height="56" rx="10" class="hd-mine"/>
+      <text x="460" y="42" text-anchor="middle" class="ht">A2A server</text><text x="460" y="60" text-anchor="middle" class="hs">server.py</text>
+      <rect x="555" y="18" width="130" height="56" rx="10" class="hd-mine"/>
+      <text x="620" y="42" text-anchor="middle" class="ht">CrewAI crew</text><text x="620" y="60" text-anchor="middle" class="hs">investigator_crew.py</text>
+      <rect x="725" y="18" width="130" height="56" rx="10" class="hd-sap"/>
+      <text x="790" y="42" text-anchor="middle" class="ht">Gen AI Hub</text><text x="790" y="60" text-anchor="middle" class="hs">LLMs</text>
+      <rect x="885" y="18" width="130" height="56" rx="10" class="hd-sap"/>
+      <text x="950" y="42" text-anchor="middle" class="ht">SAP-RPT-1</text><text x="950" y="60" text-anchor="middle" class="hs">tabular model</text>
+      <rect x="1040" y="18" width="130" height="56" rx="10" class="hd-sap"/>
+      <text x="1105" y="42" text-anchor="middle" class="ht">Grounding</text><text x="1105" y="60" text-anchor="middle" class="hs">vector search</text>
+
+      <!-- lifelines -->
+      <line x1="160" y1="74" x2="160" y2="706" class="life"/>
+      <line x1="310" y1="74" x2="310" y2="706" class="life"/>
+      <line x1="460" y1="74" x2="460" y2="706" class="life"/>
+      <line x1="620" y1="74" x2="620" y2="706" class="life"/>
+      <line x1="790" y1="74" x2="790" y2="706" class="life"/>
+      <line x1="950" y1="74" x2="950" y2="706" class="life"/>
+      <line x1="1105" y1="74" x2="1105" y2="706" class="life"/>
+
+      <!-- activations -->
+      <rect x="455" y="236" width="10" height="400" rx="2" class="act"/>
+      <rect x="615" y="290" width="10" height="324" rx="2" class="act"/>
+
+      <!-- 1 resolve -->
+      <line x1="160" y1="124" x2="308" y2="124" class="m" marker-end="url(#h)"/>
+      <text x="235" y="115" text-anchor="middle" class="ml on-a">resolve alias</text>
+      <!-- 2 card -->
+      <line x1="160" y1="158" x2="453" y2="158" class="m" marker-end="url(#h)"/>
+      <text x="306" y="149" text-anchor="middle" class="ml on-a">GET /.well-known/agent-card.json</text>
+      <!-- 3 card back -->
+      <line x1="460" y1="190" x2="162" y2="190" class="r" marker-end="url(#h)"/>
+      <text x="310" y="182" text-anchor="middle" class="ms on-a">AgentCard · skill "investigate"</text>
+
+      <!-- 4 message/send -->
+      <line x1="160" y1="240" x2="453" y2="240" class="m" marker-end="url(#h)"/>
+      <text x="306" y="231" text-anchor="middle" class="ml on-b">POST message/send · JSON-RPC</text>
+      <!-- 5 working -->
+      <path d="M465,252 H500 V268 H467" class="m" marker-end="url(#h)"/>
+      <text x="508" y="264" class="ms on-b">status: working</text>
+      <!-- 6 kickoff -->
+      <line x1="465" y1="298" x2="613" y2="298" class="m" marker-end="url(#h)"/>
+      <text x="560" y="290" text-anchor="middle" class="ml on-b">kickoff(inputs)</text>
+
+      <!-- 7 rpt -->
+      <line x1="625" y1="340" x2="948" y2="340" class="m" marker-end="url(#h)"/>
+      <text x="870" y="331" text-anchor="middle" class="ml on-a">predict(payload)</text>
+      <line x1="950" y1="368" x2="627" y2="368" class="r" marker-end="url(#h)"/>
+      <text x="870" y="361" text-anchor="middle" class="ms on-a">5 [PREDICT] cells filled</text>
+      <!-- 8 grounding -->
+      <line x1="625" y1="414" x2="1103" y2="414" class="m" marker-end="url(#h)"/>
+      <text x="1028" y="405" text-anchor="middle" class="ml on-a">search(query) × 3</text>
+      <line x1="1105" y1="442" x2="627" y2="442" class="r" marker-end="url(#h)"/>
+      <text x="1028" y="435" text-anchor="middle" class="ms on-a">top 5 chunks each</text>
+      <!-- 9 llm -->
+      <line x1="625" y1="490" x2="788" y2="490" class="m" marker-end="url(#h)"/>
+      <text x="706" y="481" text-anchor="middle" class="ml on-a">completion</text>
+      <line x1="790" y1="518" x2="627" y2="518" class="r" marker-end="url(#h)"/>
+      <text x="706" y="511" text-anchor="middle" class="ms on-a">verdict text</text>
+      <text x="800" y="545" class="ms on-a">LiteLLM calls happen at every agent step</text>
+      <text x="800" y="560" class="ms on-a">flash-lite for tool users, gpt-4o for the detective</text>
+
+      <!-- 10 crew output -->
+      <line x1="620" y1="610" x2="467" y2="610" class="r" marker-end="url(#h)"/>
+      <text x="540" y="602" text-anchor="middle" class="ms on-b">CrewOutput</text>
+      <!-- 11 completed -->
+      <line x1="460" y1="632" x2="162" y2="632" class="r" marker-end="url(#h)"/>
+      <text x="310" y="624" text-anchor="middle" class="ml on-b">artifact investigation_result · completed</text>
+      <!-- 12 render -->
+      <path d="M160,660 H195 V680 H162" class="m" marker-end="url(#h)"/>
+      <text x="203" y="675" class="ms on-b">render artifacts[0] as markdown</text>
+    </svg>
+  </div>
+</section>
+
+<!-- 3. Contracts -->
+<section>
+  <div class="sh">
+    <h2>The four contracts</h2>
+    <p>Each boundary is a small, declarative piece of config or data. These are taken from my project files; the A2A message shows the standard request shape.</p>
+  </div>
+  <div class="cards">
+    <article class="card">
+      <div class="card-h"><i class="dot blue"></i><b>Joule → agent</b><code>investigate_function.yaml</code></div>
+<pre><span class="k">action_groups</span>:
+  - <span class="k">actions</span>:
+      - <span class="k">type</span>: <span class="s">agent-request</span>
+        <span class="k">system_alias</span>: <span class="s">INVESTIGATOR_AGENT</span>
+        <span class="k">agent_type</span>: <span class="s">remote</span>
+        <span class="k">result_variable</span>: <span class="s">"apiResponse"</span>
+      - <span class="k">type</span>: <span class="s">message</span>
+        <span class="k">message</span>:
+          <span class="k">content</span>: <span class="s">"&lt;? apiResponse.body.artifacts[0].parts[0].text ?&gt;"</span></pre>
+    </article>
+    <article class="card">
+      <div class="card-h"><i class="dot ink"></i><b>A2A request</b><code>JSON-RPC 2.0</code></div>
+<pre>{
+  <span class="k">"jsonrpc"</span>: <span class="s">"2.0"</span>,
+  <span class="k">"method"</span>: <span class="s">"message/send"</span>,
+  <span class="k">"params"</span>: {
+    <span class="k">"message"</span>: {
+      <span class="k">"role"</span>: <span class="s">"user"</span>,
+      <span class="k">"parts"</span>: [{ <span class="k">"kind"</span>: <span class="s">"text"</span>,
+                 <span class="k">"text"</span>: <span class="s">"Investigate the art theft"</span> }]
+    }
+  }
+}</pre>
+    </article>
+    <article class="card">
+      <div class="card-h"><i class="dot ink"></i><b>Agent definition</b><code>config/agents.yaml</code></div>
+<pre><span class="k">evidence_analyst_agent</span>:
+  <span class="k">role</span>: <span class="s">Criminal Evidence Analyst</span>
+  <span class="k">goal</span>: <span class="s">&gt;</span>
+    <span class="s">Retrieve and analyze evidence ONLY via the</span>
+    <span class="s">call_grounding_service tool. Search for each</span>
+    <span class="s">suspect by name: {suspect_names}.</span>
+    <span class="s">Do NOT fabricate any evidence or alibis.</span>
+  <span class="k">llm</span>: <span class="s">sap/gemini-2.5-flash-lite</span></pre>
+    </article>
+    <article class="card">
+      <div class="card-h"><i class="dot ink"></i><b>RPT-1 input</b><code>payload.py</code></div>
+<pre><span class="k">"prediction_config"</span>: {
+  <span class="k">"target_columns"</span>: [
+    { <span class="k">"name"</span>: <span class="s">"INSURANCE_VALUE"</span>, <span class="k">"task_type"</span>: <span class="s">"regression"</span>,
+      <span class="k">"prediction_placeholder"</span>: <span class="s">"[PREDICT]"</span> },
+    { <span class="k">"name"</span>: <span class="s">"ITEM_CATEGORY"</span>, <span class="k">"task_type"</span>: <span class="s">"classification"</span>,
+      <span class="k">"prediction_placeholder"</span>: <span class="s">"[PREDICT]"</span> }
+  ]
+},
+<span class="k">"index_column"</span>: <span class="s">"ITEM_ID"</span>,
+<span class="k">"rows"</span>: [ <span class="d">/* 14 stolen items */</span> ]</pre>
+    </article>
+  </div>
+</section>
+
+<!-- 4. Decisions -->
+<section>
+  <div class="sh">
+    <h2>Design decisions</h2>
+    <p>The choices that shaped the system and why each one holds.</p>
+  </div>
+  <ul class="decisions">
+    <li><b>Sequential, not hierarchical</b><p>The detective needs both reports before it can reason. A fixed order follows that data dependency and keeps runs reproducible.</p><span class="where">Process.sequential · context=[appraise, analyze]</span></li>
+    <li><b>Numbers from RPT-1, facts from documents</b><p>The LLMs only reason over tool output. Every prompt forbids invented values, alibis or evidence.</p><span class="where">"Do NOT fabricate" in agents.yaml</span></li>
+    <li><b>A model per role</b><p>The two tool-calling agents run on a fast, cheap model. The one agent that has to weigh evidence gets GPT-4o.</p><span class="where">sap/gemini-2.5-flash-lite · sap/gpt-4o</span></li>
+    <li><b>A2A as the only interface</b><p>Joule knows the agent card and nothing else. The crew could be rewritten in LangGraph without touching Joule.</p><span class="where">/.well-known/agent-card.json</span></li>
+    <li><b>Config outside the code</b><p>The URL lives in a BTP Destination and the credentials come from a service binding. <code>.env</code> never leaves the laptop.</p><span class="where">Destination · generative-ai-hub binding · .cfignore</span></li>
+    <li><b>One worker, in-memory tasks</b><p>A crew run is memory-heavy, so one worker in 1 GB keeps it predictable. Scaling out would need a persistent task store.</p><span class="where">uvicorn --workers 1 · InMemoryTaskStore</span></li>
+  </ul>
+</section>
+
+<footer>
+  <span>Built at the SAP CodeJam "Build Code-Based AI Agents on SAP BTP", Berlin 2026</span>
+  <a href="https://github.com/SAP-samples/codejam-code-based-agents">SAP-samples/codejam-code-based-agents</a>
+</footer>
+
+</div>

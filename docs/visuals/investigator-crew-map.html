@@ -1,0 +1,190 @@
+<title>Investigator Crew Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: single bright poster. Header, one diagram, four-step strip. Each agent shares a hue with the SAP service it uses. */
+:root {
+  color-scheme: light;
+  --bg: #FFFFFF;
+  --ink: #0F2138;
+  --muted: #5E6E82;
+  --line: #D9E1EB;
+  --frame: #A9B8CA;
+  --blue: #0A6EF0;   --blue-soft: #E8F1FE;
+  --amber: #E8870A;  --amber-soft: #FFF3E1;
+  --teal: #0C9C95;   --teal-soft: #E1F6F4;
+  --violet: #7146F0; --violet-soft: #EFEAFE;
+  --sans: "Plus Jakarta Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; padding-block: 40px 48px; display: grid; gap: 28px; }
+
+header { display: grid; gap: 8px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--blue); }
+h1 { margin: 0; font-size: clamp(32px, 5.4vw, 48px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; text-wrap: balance; }
+.lede { margin: 0; font-size: 18px; color: var(--muted); max-width: 60ch; }
+
+.diagram { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: #FBFCFE; }
+.diagram svg { display: block; width: 100%; min-width: 840px; height: auto; }
+
+/* SVG */
+.frame { fill: none; stroke: var(--frame); stroke-width: 1.4; stroke-dasharray: 3 5; }
+.zone { fill: #FFFFFF; stroke: var(--line); stroke-width: 1.4; }
+.zl { fill: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.fl { fill: var(--frame); font-family: var(--sans); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.tile-blue { fill: var(--blue-soft); stroke: var(--blue); stroke-width: 2; }
+.tile-amber { fill: var(--amber-soft); stroke: var(--amber); stroke-width: 2; }
+.tile-teal { fill: var(--teal-soft); stroke: var(--teal); stroke-width: 2; }
+.tile-violet { fill: var(--violet-soft); stroke: var(--violet); stroke-width: 2; }
+.agent { fill: #FFFFFF; stroke-width: 2; }
+.a-amber { stroke: var(--amber); } .a-teal { stroke: var(--teal); } .a-violet { stroke: var(--violet); }
+.dot-amber { fill: var(--amber); } .dot-teal { fill: var(--teal); } .dot-violet { fill: var(--violet); } .dot-blue { fill: var(--blue); }
+.tt { fill: var(--ink); font-family: var(--sans); font-size: 18px; font-weight: 700; }
+.ts { fill: var(--muted); font-family: var(--sans); font-size: 13.5px; }
+.el { fill: var(--ink); font-family: var(--mono); font-size: 12px; font-weight: 500; paint-order: stroke; stroke: #FBFCFE; stroke-width: 6px; stroke-linejoin: round; }
+.el-w { fill: var(--muted); font-family: var(--mono); font-size: 11.5px; paint-order: stroke; stroke: #FFFFFF; stroke-width: 6px; stroke-linejoin: round; }
+.edge { fill: none; stroke: var(--ink); stroke-width: 1.8; }
+.edge-soft { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.e-amber { fill: none; stroke: var(--amber); stroke-width: 2; }
+.e-teal { fill: none; stroke: var(--teal); stroke-width: 2; }
+.e-violet { fill: none; stroke: var(--violet); stroke-width: 2; }
+.ah { fill: var(--ink); } .ah-muted { fill: var(--muted); }
+.ah-amber { fill: var(--amber); } .ah-teal { fill: var(--teal); } .ah-violet { fill: var(--violet); }
+.badge { fill: var(--ink); }
+.badge-t { fill: #FFFFFF; font-family: var(--sans); font-size: 13px; font-weight: 800; }
+.person { fill: var(--ink); }
+
+/* Steps */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .steps { grid-template-columns: 1fr; } }
+.steps li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 12px; align-items: start; }
+.n { grid-row: span 2; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: #FFFFFF; font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+.steps b { font-size: 15.5px; font-weight: 700; }
+.steps p { margin: 0; color: var(--muted); font-size: 14px; }
+
+footer { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 16px; font-size: 13px; color: var(--muted); }
+.key { display: flex; flex-wrap: wrap; gap: 16px; }
+.key span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; border: 2px solid; }
+.sw.sap { background: var(--blue-soft); border-color: var(--blue); }
+.sw.mine { background: #FFFFFF; border-color: var(--ink); }
+a { color: var(--blue); }
+a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">SAP CodeJam · Berlin · September 2026</div>
+  <h1>Investigator Crew</h1>
+  <p class="lede">How my CrewAI agents solve an art heist on SAP Business Technology Platform, from a question in Joule to a verdict.</p>
+</header>
+
+<div class="diagram">
+  <svg viewBox="0 0 1200 600" role="img" aria-label="A user asks SAP Joule. Joule sends an A2A request to a CrewAI crew on Cloud Foundry. Three agents run in turn: the Loss Appraiser uses SAP-RPT-1, the Evidence Analyst uses the Grounding Service, and the Lead Detective reasons with Generative AI Hub. The verdict returns to Joule.">
+    <defs>
+      <marker id="a-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+      <marker id="a-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-muted"/></marker>
+      <marker id="a-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-amber"/></marker>
+      <marker id="a-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-teal"/></marker>
+      <marker id="a-violet" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-violet"/></marker>
+    </defs>
+
+    <!-- user -->
+    <circle cx="66" cy="272" r="15" class="person"/>
+    <path d="M38,330 Q38,296 66,296 Q94,296 94,330 Z" class="person"/>
+    <text x="66" y="356" text-anchor="middle" class="tt" style="font-size:15px">You</text>
+
+    <!-- BTP frame -->
+    <rect x="140" y="28" width="1040" height="548" rx="18" class="frame"/>
+    <text x="164" y="56" class="fl">SAP Business Technology Platform</text>
+
+    <!-- Joule -->
+    <rect x="164" y="236" width="180" height="128" rx="14" class="tile-blue"/>
+    <text x="254" y="290" text-anchor="middle" class="tt">SAP Joule</text>
+    <text x="254" y="314" text-anchor="middle" class="ts">the front door</text>
+
+    <!-- user -> joule -->
+    <line x1="100" y1="300" x2="162" y2="300" class="edge" marker-end="url(#a-ink)"/>
+    <circle cx="124" cy="276" r="13" class="badge"/><text x="124" y="281" text-anchor="middle" class="badge-t">1</text>
+
+    <!-- Cloud Foundry zone -->
+    <rect x="420" y="80" width="330" height="476" rx="16" class="zone"/>
+    <text x="444" y="110" class="zl">Cloud Foundry · my crew</text>
+
+    <rect x="450" y="132" width="270" height="96" rx="12" class="agent a-amber"/>
+    <circle cx="478" cy="164" r="7" class="dot-amber"/>
+    <text x="496" y="170" class="tt">Loss Appraiser</text>
+    <text x="496" y="196" class="ts">values the stolen art</text>
+
+    <rect x="450" y="272" width="270" height="96" rx="12" class="agent a-teal"/>
+    <circle cx="478" cy="304" r="7" class="dot-teal"/>
+    <text x="496" y="310" class="tt">Evidence Analyst</text>
+    <text x="496" y="336" class="ts">reads the case files</text>
+
+    <rect x="450" y="412" width="270" height="96" rx="12" class="agent a-violet"/>
+    <circle cx="478" cy="444" r="7" class="dot-violet"/>
+    <text x="496" y="450" class="tt">Lead Detective</text>
+    <text x="496" y="476" class="ts">names the thief</text>
+
+    <!-- hand-offs -->
+    <line x1="585" y1="228" x2="585" y2="270" class="edge-soft" marker-end="url(#a-muted)"/>
+    <line x1="585" y1="368" x2="585" y2="410" class="edge-soft" marker-end="url(#a-muted)"/>
+
+    <!-- joule -> crew (A2A) -->
+    <path d="M344,270 H392 V180 H448" class="edge" marker-end="url(#a-ink)"/>
+    <text x="398" y="232" class="el" transform="rotate(-90 398 232)" text-anchor="middle">A2A request</text>
+    <circle cx="392" cy="270" r="13" class="badge"/><text x="392" y="275" text-anchor="middle" class="badge-t">2</text>
+
+    <!-- crew -> joule (verdict) -->
+    <path d="M448,460 H392 V330 H346" class="edge" marker-end="url(#a-ink)"/>
+    <text x="398" y="400" class="el" transform="rotate(-90 398 400)" text-anchor="middle">verdict</text>
+    <circle cx="392" cy="460" r="13" class="badge"/><text x="392" y="465" text-anchor="middle" class="badge-t">4</text>
+
+    <!-- SAP AI Core zone -->
+    <rect x="830" y="80" width="326" height="476" rx="16" class="zone"/>
+    <text x="854" y="110" class="zl">SAP AI Core</text>
+
+    <rect x="860" y="132" width="266" height="96" rx="12" class="tile-amber"/>
+    <text x="993" y="172" text-anchor="middle" class="tt">SAP-RPT-1</text>
+    <text x="993" y="198" text-anchor="middle" class="ts">predicts values in tables</text>
+
+    <rect x="860" y="272" width="266" height="96" rx="12" class="tile-teal"/>
+    <text x="993" y="312" text-anchor="middle" class="tt">Grounding Service</text>
+    <text x="993" y="338" text-anchor="middle" class="ts">finds facts in documents</text>
+
+    <rect x="860" y="412" width="266" height="96" rx="12" class="tile-violet"/>
+    <text x="993" y="452" text-anchor="middle" class="tt">Generative AI Hub</text>
+    <text x="993" y="478" text-anchor="middle" class="ts">LLMs: Gemini · GPT-4o</text>
+
+    <!-- agent <-> service -->
+    <line x1="722" y1="180" x2="858" y2="180" class="e-amber" marker-start="url(#a-amber)" marker-end="url(#a-amber)"/>
+    <text x="790" y="170" text-anchor="middle" class="el">items table</text>
+    <line x1="722" y1="320" x2="858" y2="320" class="e-teal" marker-start="url(#a-teal)" marker-end="url(#a-teal)"/>
+    <text x="790" y="310" text-anchor="middle" class="el">evidence</text>
+    <line x1="722" y1="460" x2="858" y2="460" class="e-violet" marker-start="url(#a-violet)" marker-end="url(#a-violet)"/>
+    <text x="790" y="450" text-anchor="middle" class="el">reasoning</text>
+    <circle cx="790" cy="534" r="13" class="badge"/><text x="790" y="539" text-anchor="middle" class="badge-t">3</text>
+    <text x="810" y="539" class="el-w" style="font-size:12px">each agent, its own tool</text>
+  </svg>
+</div>
+
+<ol class="steps">
+  <li><span class="n">1</span><b>Ask</b><p>You ask Joule to investigate the art theft.</p></li>
+  <li><span class="n">2</span><b>Hand off</b><p>Joule calls my crew over the A2A agent protocol.</p></li>
+  <li><span class="n">3</span><b>Investigate</b><p>Three agents work in turn, each backed by an SAP AI service.</p></li>
+  <li><span class="n">4</span><b>Answer</b><p>The Lead Detective's verdict appears in Joule.</p></li>
+</ol>
+
+<footer>
+  <div class="key">
+    <span><i class="sw sap"></i>SAP service</span>
+    <span><i class="sw mine"></i>My code · Python + CrewAI</span>
+  </div>
+  <span><a href="https://github.com/SAP-samples/codejam-code-based-agents">SAP-samples/codejam-code-based-agents</a></span>
+</footer>
+
+</div>
